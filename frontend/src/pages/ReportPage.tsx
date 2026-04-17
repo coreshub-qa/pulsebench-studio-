@@ -329,7 +329,7 @@ export function ReportPage() {
             <div data-export-ignore="true">
               {details?.spec.aiEnabled ? (
                 <Suspense fallback={<div className="rounded-full border border-white/10 px-4 py-2 text-sm text-signal-fog/65">AI 面板加载中...</div>}>
-                  <AIAnalysisPanel runId={runId} runStatus={details?.runtime.status} />
+                  <AIAnalysisPanel runId={runId} runStatus={details?.runtime.status} variant="dialog" />
                 </Suspense>
               ) : null}
             </div>
@@ -372,6 +372,14 @@ export function ReportPage() {
         <Suspense fallback={<div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-signal-fog/70">图表加载中...</div>}>
           <ChartsPanel ref={chartsRef} metrics={report.perConcurrency} percentiles={report.percentiles} />
         </Suspense>
+
+        {details?.spec.aiEnabled ? (
+          <div data-export-ignore="true">
+            <Suspense fallback={<div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 text-signal-fog/70">AI 面板加载中...</div>}>
+              <AIAnalysisPanel runId={runId} runStatus={details?.runtime.status} variant="inline" />
+            </Suspense>
+          </div>
+        ) : null}
 
         <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
           <SectionCard title="Diagnosis Cards" kicker="Interpretation">

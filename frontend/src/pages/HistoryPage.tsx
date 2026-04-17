@@ -1,6 +1,7 @@
-import { RefreshCcw, Search } from "lucide-react";
+import { FlaskConical, RefreshCcw, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { EmptyState } from "../components/EmptyState";
 import { SectionCard } from "../components/SectionCard";
 import { api } from "../lib/api";
 import type { BatchManifest, HistoryItem } from "../lib/types";
@@ -87,8 +88,13 @@ export function HistoryPage() {
               ))}
               {batches.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-sm text-signal-fog/50">
-                    暂无批次记录
+                  <td colSpan={7}>
+                    <EmptyState
+                      icon={<FlaskConical className="h-6 w-6" />}
+                      title="暂无批次记录"
+                      description="创建一个批次测试后，记录会出现在这里。"
+                      action={<Link to="/" className="text-sm text-signal-copper hover:underline">开始测试 →</Link>}
+                    />
                   </td>
                 </tr>
               ) : null}
@@ -160,8 +166,13 @@ export function HistoryPage() {
             ))}
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-sm text-signal-fog/50">
-                  暂无历史记录
+                <td colSpan={7}>
+                  <EmptyState
+                    icon={<Search className="h-6 w-6" />}
+                    title="暂无历史记录"
+                    description={query ? "没有匹配的记录，试试其他关键词。" : "运行一次测试后，记录会出现在这里。"}
+                    action={!query ? <Link to="/" className="text-sm text-signal-copper hover:underline">开始测试 →</Link> : undefined}
+                  />
                 </td>
               </tr>
             ) : null}

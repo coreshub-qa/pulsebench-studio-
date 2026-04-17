@@ -55,6 +55,56 @@ const navItems = [
   },
 ];
 
+type FlowStep = { label: string; active: boolean; done: boolean };
+
+function resolveFlow(pathname: string): FlowStep[] | null {
+  const isAgent = pathname.startsWith("/agent");
+  const isConfig = pathname.startsWith("/quick-check") || pathname.startsWith("/templates") || pathname.startsWith("/custom");
+  const isLive = pathname.startsWith("/live") || pathname.startsWith("/batch/");
+  const isReport = pathname.startsWith("/report") || pathname.startsWith("/batch-report");
+
+  if (!isAgent && !isConfig && !isLive && !isReport) return null;
+
+  if (isAgent) {
+    return [
+      { label: "配置", active: true, done: false },
+      { label: "策略", active: false, done: false },
+      { label: "执行", active: false, done: false },
+      { label: "报告", active: false, done: false },
+    ];
+  }
+
+  return [
+    { label: "配置", active: isConfig, done: isLive || isReport },
+    { label: "运行", active: isLive, done: isReport },
+    { label: "报告", active: isReport, done: false },
+  ];
+}
+
+function FlowBreadcrumb({ steps }: { steps: FlowStep[] }) {
+  return (
+    <div className="flex items-center gap-1">
+      {steps.map((step, i) => (
+        <div key={step.label} className="flex items-center gap-1">
+          {i > 0 && <ChevronRight className="h-3 w-3 text-white/15" />}
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 font-mono text-[10px] tracking-[0.16em] transition",
+              step.active
+                ? "bg-signal-cyan/12 text-signal-cyan"
+                : step.done
+                  ? "text-signal-fog/50"
+                  : "text-signal-fog/25",
+            )}
+          >
+            {step.done ? "✓ " : ""}{step.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function resolveMeta(pathname: string) {
   if (pathname === "/") {
     return {
@@ -148,6 +198,7 @@ function resolveMeta(pathname: string) {
 export function LayoutShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const meta = resolveMeta(location.pathname);
+  const flow = resolveFlow(location.pathname);
   const isHome = location.pathname === "/";
 
   return (
@@ -210,8 +261,11 @@ export function LayoutShell({ children }: { children: ReactNode }) {
               <div className="h-4 w-px bg-white/10" />
               <h1 className="font-display text-xl text-white">{meta.title}</h1>
               <span className="text-sm text-signal-fog/55">{meta.summary}</span>
-              <div className="ml-auto rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 font-mono text-[10px] tracking-[0.2em] text-signal-fog/55">
-                {meta.stage}
+              <div className="ml-auto flex items-center gap-3">
+                {flow ? <FlowBreadcrumb steps={flow} /> : null}
+                <div className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 font-mono text-[10px] tracking-[0.2em] text-signal-fog/55">
+                  {meta.stage}
+                </div>
               </div>
             </motion.div>
           ) : null}
