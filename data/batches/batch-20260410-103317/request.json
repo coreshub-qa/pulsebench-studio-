@@ -1,0 +1,94 @@
+{
+  "templateId": "quick_check",
+  "mode": "quick_check",
+  "title": "一键体检批次",
+  "runs": [
+    {
+      "label": "短文本基线",
+      "objective": "使用短问答数据快速观察单并发与低并发体验。",
+      "spec": {
+        "title": "一键体检批次 · 短文本基线",
+        "model": "Kimi-K2.5",
+        "url": "https://openapi.coreshub.cn/v1",
+        "apiKey": true,
+        "parallel": [
+          1,
+          5,
+          10
+        ],
+        "number": [
+          8,
+          20,
+          40
+        ],
+        "dataset": "openqa",
+        "tokenizerPath": "",
+        "datasetPath": "/Users/zhanglinsen/Documents/AIGC/项目/推理服务性能测试工具/pulsebench-studio/backend/assets/datasets/quickcheck_openqa.jsonl",
+        "minPromptLength": 0,
+        "maxPromptLength": 256,
+        "minTokens": 2048,
+        "maxTokens": 2048,
+        "extraArgs": {},
+        "aiEnabled": true
+      }
+    },
+    {
+      "label": "均衡吞吐",
+      "objective": "使用长文本数据观察中等输入输出下的吞吐和延迟平衡。",
+      "spec": {
+        "title": "一键体检批次 · 均衡吞吐",
+        "model": "Kimi-K2.5",
+        "url": "https://openapi.coreshub.cn/v1",
+        "apiKey": true,
+        "parallel": [
+          2,
+          5,
+          10
+        ],
+        "number": [
+          6,
+          15,
+          30
+        ],
+        "dataset": "longalpaca",
+        "tokenizerPath": "",
+        "datasetPath": "/Users/zhanglinsen/Documents/AIGC/项目/推理服务性能测试工具/pulsebench-studio/backend/assets/datasets/quickcheck_longalpaca.json",
+        "minPromptLength": 4096,
+        "maxPromptLength": 8192,
+        "minTokens": 4096,
+        "maxTokens": 4096,
+        "extraArgs": {},
+        "aiEnabled": true
+      }
+    },
+    {
+      "label": "长上下文探测",
+      "objective": "使用长文本数据快速评估更长输入时的 TTFT 与稳定性。",
+      "spec": {
+        "title": "一键体检批次 · 长上下文探测",
+        "model": "Kimi-K2.5",
+        "url": "https://openapi.coreshub.cn/v1",
+        "apiKey": true,
+        "parallel": [
+          1,
+          2,
+          4
+        ],
+        "number": [
+          3,
+          6,
+          12
+        ],
+        "dataset": "longalpaca",
+        "tokenizerPath": "",
+        "datasetPath": "/Users/zhanglinsen/Documents/AIGC/项目/推理服务性能测试工具/pulsebench-studio/backend/assets/datasets/quickcheck_longalpaca.json",
+        "minPromptLength": 6000,
+        "maxPromptLength": 12000,
+        "minTokens": 4096,
+        "maxTokens": 4096,
+        "extraArgs": {},
+        "aiEnabled": true
+      }
+    }
+  ]
+}

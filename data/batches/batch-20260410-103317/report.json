@@ -1,0 +1,28 @@
+{
+  "overview": {
+    "batchId": "batch-20260410-103317",
+    "templateId": "quick_check",
+    "mode": "quick_check",
+    "totalRuns": 1,
+    "successfulRuns": 0,
+    "failedRuns": 1,
+    "bestRps": null,
+    "bestLatencySec": null
+  },
+  "items": [
+    {
+      "runId": "20260410-103317",
+      "label": "短文本基线",
+      "objective": "使用短问答数据快速观察单并发与低并发体验。",
+      "title": "一键体检批次 · 短文本基线",
+      "status": "stopped",
+      "bestRps": null,
+      "bestLatencySec": null,
+      "totalRequests": null,
+      "successRate": null
+    }
+  ],
+  "diagnosis": [
+    "该批次全部失败，优先检查服务可达性、tokenizer 路径和数据集条件。"
+  ]
+}

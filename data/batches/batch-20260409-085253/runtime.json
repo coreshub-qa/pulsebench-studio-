@@ -1,0 +1,13 @@
+{
+  "batchId": "batch-20260409-085253",
+  "templateId": "quick_check",
+  "mode": "quick_check",
+  "title": "一键体检批次",
+  "status": "stopped",
+  "createdAt": "2026-04-09T08:52:53.683968+00:00",
+  "startedAt": "2026-04-09T08:52:53.687823+00:00",
+  "finishedAt": "2026-04-09T09:07:22.328462+00:00",
+  "currentIndex": 1,
+  "totalRuns": 3,
+  "message": "批次已停止"
+}

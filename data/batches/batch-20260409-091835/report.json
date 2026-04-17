@@ -1,0 +1,50 @@
+{
+  "overview": {
+    "batchId": "batch-20260409-091835",
+    "templateId": "quick_check",
+    "mode": "quick_check",
+    "totalRuns": 3,
+    "successfulRuns": 2,
+    "failedRuns": 1,
+    "bestRps": null,
+    "bestLatencySec": null
+  },
+  "items": [
+    {
+      "runId": "20260409-091835",
+      "label": "短文本基线",
+      "objective": "使用短问答数据快速观察单并发与低并发体验。",
+      "title": "一键体检批次 · 短文本基线",
+      "status": "failed",
+      "bestRps": null,
+      "bestLatencySec": null,
+      "totalRequests": 1,
+      "successRate": null
+    },
+    {
+      "runId": "20260409-092138",
+      "label": "均衡吞吐",
+      "objective": "使用长文本数据观察中等输入输出下的吞吐和延迟平衡。",
+      "title": "一键体检批次 · 均衡吞吐",
+      "status": "success",
+      "bestRps": null,
+      "bestLatencySec": null,
+      "totalRequests": 5,
+      "successRate": null
+    },
+    {
+      "runId": "20260409-092351",
+      "label": "长上下文探测",
+      "objective": "使用长文本数据快速评估更长输入时的 TTFT 与稳定性。",
+      "title": "一键体检批次 · 长上下文探测",
+      "status": "success",
+      "bestRps": null,
+      "bestLatencySec": null,
+      "totalRequests": 3,
+      "successRate": null
+    }
+  ],
+  "diagnosis": [
+    "该批次存在部分失败场景，说明模型或服务在部分负载下稳定性不足。"
+  ]
+}

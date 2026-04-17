@@ -1,0 +1,56 @@
+[
+  {
+    "runId": "20260409-091835",
+    "label": "短文本基线",
+    "objective": "使用短问答数据快速观察单并发与低并发体验。",
+    "title": "一键体检批次 · 短文本基线",
+    "status": "failed",
+    "createdAt": "2026-04-09T09:18:35.743368+00:00",
+    "startedAt": "2026-04-09T09:18:35.746057+00:00",
+    "finishedAt": "2026-04-09T09:21:38.295182+00:00",
+    "reportOverview": {
+      "model": "GLM-5.1",
+      "status": "failed",
+      "totalRequests": 1,
+      "dataset": "openqa",
+      "bestRps": null,
+      "bestLatencySec": null
+    }
+  },
+  {
+    "runId": "20260409-092138",
+    "label": "均衡吞吐",
+    "objective": "使用长文本数据观察中等输入输出下的吞吐和延迟平衡。",
+    "title": "一键体检批次 · 均衡吞吐",
+    "status": "success",
+    "createdAt": "2026-04-09T09:21:38.296715+00:00",
+    "startedAt": "2026-04-09T09:21:38.297425+00:00",
+    "finishedAt": "2026-04-09T09:23:51.820912+00:00",
+    "reportOverview": {
+      "model": "GLM-5.1",
+      "status": "success",
+      "totalRequests": 5,
+      "dataset": "longalpaca",
+      "bestRps": null,
+      "bestLatencySec": null
+    }
+  },
+  {
+    "runId": "20260409-092351",
+    "label": "长上下文探测",
+    "objective": "使用长文本数据快速评估更长输入时的 TTFT 与稳定性。",
+    "title": "一键体检批次 · 长上下文探测",
+    "status": "success",
+    "createdAt": "2026-04-09T09:23:51.823007+00:00",
+    "startedAt": "2026-04-09T09:23:51.823824+00:00",
+    "finishedAt": "2026-04-09T09:26:34.972094+00:00",
+    "reportOverview": {
+      "model": "GLM-5.1",
+      "status": "success",
+      "totalRequests": 3,
+      "dataset": "longalpaca",
+      "bestRps": null,
+      "bestLatencySec": null
+    }
+  }
+]

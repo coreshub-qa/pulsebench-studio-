@@ -1,0 +1,16 @@
+services:
+  pulsebench:
+    build: .
+    image: pulsebench-studio
+    ports:
+      - "8080:8080"
+    environment:
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      PULSEBENCH_ALLOW_MOCK: ${PULSEBENCH_ALLOW_MOCK:-false}
+    volumes:
+      - ./data:/data
+      - /tmp/models:/models
+      - /tmp/datasets:/datasets
+

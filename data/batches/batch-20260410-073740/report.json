@@ -1,0 +1,52 @@
+{
+  "overview": {
+    "batchId": "batch-20260410-073740",
+    "templateId": "quick_check",
+    "mode": "quick_check",
+    "totalRuns": 3,
+    "successfulRuns": 3,
+    "failedRuns": 0,
+    "bestRps": 0.4915,
+    "bestLatencySec": 21.1468
+  },
+  "items": [
+    {
+      "runId": "20260410-073740",
+      "label": "短文本基线",
+      "objective": "使用短问答数据快速观察单并发与低并发体验。",
+      "title": "一键体检批次 · 短文本基线",
+      "status": "success",
+      "bestRps": 0.4915,
+      "bestLatencySec": 21.1468,
+      "totalRequests": 50,
+      "successRate": null
+    },
+    {
+      "runId": "20260410-074238",
+      "label": "均衡吞吐",
+      "objective": "使用长文本数据观察中等输入输出下的吞吐和延迟平衡。",
+      "title": "一键体检批次 · 均衡吞吐",
+      "status": "success",
+      "bestRps": 0.0812,
+      "bestLatencySec": 101.1397,
+      "totalRequests": 25,
+      "successRate": null
+    },
+    {
+      "runId": "20260410-074858",
+      "label": "长上下文探测",
+      "objective": "使用长文本数据快速评估更长输入时的 TTFT 与稳定性。",
+      "title": "一键体检批次 · 长上下文探测",
+      "status": "success",
+      "bestRps": 0.0104,
+      "bestLatencySec": 96.4268,
+      "totalRequests": 8,
+      "successRate": null
+    }
+  ],
+  "diagnosis": [
+    "该批次所有场景均成功完成，可直接进入批次报告对比。",
+    "本批次最高输出吞吐对应的场景 best RPS 为 0.49。",
+    "本批次最低平均延迟场景的 best latency 为 21.15s。"
+  ]
+}
