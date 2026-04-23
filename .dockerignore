@@ -1,0 +1,11 @@
+.git
+backend/.venv
+backend/__pycache__
+frontend/node_modules
+frontend/.vite
+data/runs
+data/batches
+.claude
+*.pyc
+*.pyo
+*.log

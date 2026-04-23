@@ -5,6 +5,7 @@ import shlex
 from pathlib import Path
 from typing import Any
 
+from builtin_datasets import builtin_dataset_path, resolve_evalscope_dataset
 from schemas import RunSpec
 
 
@@ -17,6 +18,8 @@ def normalize_url(url: str) -> str:
 
 
 def build_evalscope_command(spec: RunSpec, outputs_dir: Path) -> list[str]:
+    resolved_dataset = resolve_evalscope_dataset(spec.dataset)
+    resolved_dataset_path = spec.dataset_path or builtin_dataset_path(spec.dataset)
     command = [
         "evalscope",
         "perf",
@@ -29,14 +32,14 @@ def build_evalscope_command(spec: RunSpec, outputs_dir: Path) -> list[str]:
         "--number",
         *[str(item) for item in spec.number],
         "--dataset",
-        spec.dataset,
+        resolved_dataset,
         "--outputs-dir",
         str(outputs_dir),
     ]
 
     optional_flags: list[tuple[str, Any]] = [
         ("--tokenizer-path", spec.tokenizer_path),
-        ("--dataset-path", spec.dataset_path),
+        ("--dataset-path", resolved_dataset_path),
         ("--min-prompt-length", spec.min_prompt_length),
         ("--max-prompt-length", spec.max_prompt_length),
         ("--min-tokens", spec.min_tokens),
@@ -67,4 +70,3 @@ def render_command_preview(command: list[str]) -> str:
         if part == "--api-key":
             hide_next = True
     return " ".join(shlex.quote(part) for part in redacted)
-

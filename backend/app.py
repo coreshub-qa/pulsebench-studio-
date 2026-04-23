@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from agent_service import draft_to_batch_request, generate_agent_strategy
 from ai_service import stream_ai_analysis, test_ai_connection
-from builtin_datasets import ensure_builtin_datasets
+from builtin_datasets import BUILTIN_DATASET_SPECS, ensure_builtin_datasets
 from config import get_settings
 from run_manager import RunManager
 from schemas import (
@@ -40,11 +40,22 @@ app.add_middleware(
 
 
 def _config_meta() -> ConfigMeta:
+    builtin_options = [
+        ConfigFieldOption(value=spec.alias, label=spec.label, hint=spec.hint)
+        for spec in BUILTIN_DATASET_SPECS.values()
+    ]
+    builtin_rules = {
+        spec.alias: {
+            "recommendedPromptRange": {"min": spec.prompt_range[0], "max": spec.prompt_range[1]},
+            "tip": spec.tip,
+            "builtin": True,
+        }
+        for spec in BUILTIN_DATASET_SPECS.values()
+    }
     return ConfigMeta(
         datasets=[
             ConfigFieldOption(value="random", label="随机文本", hint="需要 tokenizer 路径"),
-            ConfigFieldOption(value="openqa", label="OpenQA", hint="短 prompt 基准"),
-            ConfigFieldOption(value="longalpaca", label="LongAlpaca", hint="长上下文测试"),
+            *builtin_options,
             ConfigFieldOption(value="line_by_line", label="逐行文本", hint="需要 dataset 路径"),
             ConfigFieldOption(value="custom", label="自定义解析器", hint="需要 dataset 路径"),
             ConfigFieldOption(value="random_vl", label="随机多模态", hint="启用图文输入参数"),
@@ -55,14 +66,7 @@ def _config_meta() -> ConfigMeta:
                 "recommendedPromptRange": {"min": 1024, "max": 1024},
                 "tip": "随机文本模式适合做固定长度压测，推荐配合 tokenizer 路径。",
             },
-            "openqa": {
-                "recommendedPromptRange": {"min": 0, "max": 256},
-                "tip": "OpenQA prompt 普遍较短，若最小长度设到 1024，数据很可能被全部过滤掉。",
-            },
-            "longalpaca": {
-                "recommendedPromptRange": {"min": 4096, "max": 12288},
-                "tip": "LongAlpaca 适合长上下文测试，建议把 prompt 长度范围拉高。",
-            },
+            **builtin_rules,
             "line_by_line": {
                 "requires": ["datasetPath"],
                 "recommendedPromptRange": {"min": 0, "max": 131072},

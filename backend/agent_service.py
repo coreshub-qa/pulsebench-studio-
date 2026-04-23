@@ -9,6 +9,7 @@ from typing import Any
 import httpx
 from fastapi import HTTPException
 
+from builtin_datasets import builtin_dataset_path, get_builtin_dataset_spec
 from config import Settings
 from schemas import (
     AgentConfidence,
@@ -52,10 +53,42 @@ GOAL_FOCUS_METRICS: dict[AgentGoal, list[str]] = {
     "capacity_limit": ["success_rate", "output_tps", "ttft_p99", "latency_p99"],
 }
 
-BUILTIN_DATASET_FILES = {
-    "openqa": "quickcheck_openqa.jsonl",
-    "longalpaca": "quickcheck_longalpaca.json",
+WORKLOAD_DATASET_PREFERENCES = {
+    "chat_short": "chat_short",
+    "chat_long_output": "chat_short",
+    "rag_medium_context": "rag_medium_context",
+    "long_context_analysis": "long_context_analysis",
+    "code_generation": "code_generation",
 }
+
+CODE_EDITING_HINTS = (
+    "编辑",
+    "修改",
+    "重构",
+    "patch",
+    "补丁",
+    "改代码",
+    "refactor",
+    "rewrite",
+    "update file",
+)
+
+CODE_DEBUGGING_HINTS = (
+    "报错",
+    "报错栈",
+    "堆栈",
+    "异常",
+    "debug",
+    "排查",
+    "定位",
+    "修复",
+    "bug",
+    "故障",
+    "traceback",
+    "error",
+    "502",
+    "超时",
+)
 
 SYSTEM_PROMPT = dedent(
     """
@@ -214,10 +247,7 @@ def _cap_length(value: int, *, minimum: int = 1, maximum: int | None = None) -> 
 
 
 def _builtin_dataset_path(settings: Settings, dataset: str) -> str | None:
-    filename = BUILTIN_DATASET_FILES.get(dataset)
-    if not filename:
-        return None
-    return str((settings.builtin_datasets_dir / filename).resolve())
+    return builtin_dataset_path(dataset, settings.builtin_datasets_dir)
 
 
 def _default_lengths(request: AgentStrategyRequest) -> tuple[int, int]:
@@ -261,18 +291,83 @@ def _default_lengths(request: AgentStrategyRequest) -> tuple[int, int]:
     return max(prompt, 1), max(output, 1)
 
 
+def _dedupe_keep_order(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            ordered.append(item)
+    return ordered
+
+
+def _pick_code_dataset_variant(request: AgentStrategyRequest) -> str:
+    question = (request.question or "").lower()
+    if any(hint in question for hint in CODE_DEBUGGING_HINTS):
+        return "code_debugging"
+    if any(hint in question for hint in CODE_EDITING_HINTS):
+        return "code_editing"
+    return "code_generation"
+
+
 def _preferred_dataset(request: AgentStrategyRequest, prompt_length: int) -> tuple[str, list[str], list[str]]:
     notes: list[str] = []
+    workload_dataset = WORKLOAD_DATASET_PREFERENCES.get(request.workload_type)
+    if request.workload_type == "code_generation":
+        workload_dataset = _pick_code_dataset_variant(request)
+    if workload_dataset:
+        candidates = [workload_dataset]
+        if request.tokenizer_path:
+            candidates.append("random")
+        if workload_dataset in {
+            "rag_medium_context",
+            "code_generation",
+            "code_editing",
+            "code_debugging",
+            "long_context_analysis",
+        }:
+            candidates.append("longalpaca")
+        else:
+            candidates.append("openqa")
+        if workload_dataset in {"code_generation", "code_editing", "code_debugging"}:
+            candidates.extend(["code_generation", "code_editing", "code_debugging"])
+        notes.append(f"已根据 workloadType={request.workload_type} 优先选择更贴近场景的内置数据集。")
+        if request.tokenizer_path:
+            notes.append("如需严格按 token 长度控制，可切换到 random 数据集。")
+        return workload_dataset, _dedupe_keep_order(candidates), notes
     if request.tokenizer_path:
-        return "random", ["random", "openqa", "longalpaca"], notes
+        return "random", ["random", "chat_short", "longalpaca"], notes
     if request.goal == "health_check":
         notes.append("未提供 tokenizerPath，已自动退回内置数据集，首轮更适合做服务验活而非严格长度控制。")
-        return "openqa", ["openqa", "longalpaca"], notes
+        return "openqa", ["openqa", "chat_short", "longalpaca"], notes
     if request.goal == "long_context" or prompt_length >= 4096:
         notes.append("未提供 tokenizerPath，已优先使用 longalpaca 作为长文本近似负载。")
-        return "longalpaca", ["longalpaca", "openqa"], notes
+        return "longalpaca", ["longalpaca", "long_context_analysis", "rag_medium_context"], notes
     notes.append("未提供 tokenizerPath，已优先使用 openqa 作为保守负载。")
-    return "openqa", ["openqa", "longalpaca"], notes
+    return "openqa", ["openqa", "chat_short", "longalpaca"], notes
+
+
+def _short_form_dataset(dataset: str) -> str:
+    if dataset in {"chat_short", "openqa"}:
+        return dataset
+    if dataset == "random":
+        return dataset
+    return "chat_short"
+
+
+def _long_form_dataset(dataset: str) -> str:
+    if dataset in {
+        "longalpaca",
+        "rag_medium_context",
+        "code_generation",
+        "code_editing",
+        "code_debugging",
+        "long_context_analysis",
+    }:
+        return dataset
+    if dataset == "random":
+        return dataset
+    return "longalpaca"
 
 
 def _recommend_concurrency(request: AgentStrategyRequest, prompt_length: int, output_length: int) -> list[int]:
@@ -388,6 +483,12 @@ def _build_spec(
     tokenizer_path = request.tokenizer_path if dataset == "random" else None
     if dataset == "random" and not tokenizer_path:
         raise HTTPException(status_code=422, detail="random 数据集模式需要 tokenizerPath。")
+    prompt_min = prompt_length
+    prompt_max = prompt_length
+    builtin_spec = get_builtin_dataset_spec(dataset)
+    if builtin_spec is not None:
+        prompt_min = builtin_spec.prompt_range[0]
+        prompt_max = builtin_spec.prompt_range[1]
     return RunSpec(
         model=request.model,
         url=request.url,
@@ -397,8 +498,8 @@ def _build_spec(
         dataset=dataset,
         tokenizerPath=tokenizer_path,
         datasetPath=dataset_path,
-        minPromptLength=prompt_length,
-        maxPromptLength=prompt_length,
+        minPromptLength=prompt_min,
+        maxPromptLength=prompt_max,
         minTokens=output_length,
         maxTokens=output_length,
         extraArgs={"stream": bool(request.stream if request.stream is not None else True), "temperature": 0.0},
@@ -413,6 +514,8 @@ def _build_base_runs(settings: Settings, request: AgentStrategyRequest, guardrai
     short_output = min(token_mid, 2048)
     long_prompt = min(prompt_mid, request.context_window or prompt_mid)
     dataset = guardrails.preferred_dataset
+    short_dataset = _short_form_dataset(dataset)
+    long_dataset = _long_form_dataset(dataset)
     runs: list[AgentStrategyRun] = []
 
     if request.goal == "health_check":
@@ -424,7 +527,7 @@ def _build_base_runs(settings: Settings, request: AgentStrategyRequest, guardrai
                 spec=_build_spec(
                     settings,
                     request,
-                    dataset="openqa",
+                    dataset=short_dataset,
                     prompt_length=min(short_prompt, 256),
                     output_length=min(short_output, 1024),
                     parallel=[1, 2, 4],
@@ -440,7 +543,7 @@ def _build_base_runs(settings: Settings, request: AgentStrategyRequest, guardrai
                 spec=_build_spec(
                     settings,
                     request,
-                    dataset="longalpaca" if dataset != "random" else dataset,
+                    dataset=long_dataset,
                     prompt_length=max(2048, min(prompt_mid, 8192)),
                     output_length=max(1024, min(token_mid, 4096)),
                     parallel=guardrails.recommended_concurrency[:3],
@@ -457,7 +560,7 @@ def _build_base_runs(settings: Settings, request: AgentStrategyRequest, guardrai
                     spec=_build_spec(
                         settings,
                         request,
-                        dataset="longalpaca",
+                        dataset=long_dataset,
                         prompt_length=max(4096, min(prompt_mid, 12288)),
                         output_length=max(1024, min(token_mid, 4096)),
                         parallel=[1, 2],
@@ -503,7 +606,7 @@ def _build_base_runs(settings: Settings, request: AgentStrategyRequest, guardrai
                     spec=_build_spec(
                         settings,
                         request,
-                        dataset=dataset if dataset != "openqa" else "longalpaca",
+                        dataset=long_dataset if dataset != "random" else dataset,
                         prompt_length=max(2048, min(prompt_mid, 8192)),
                         output_length=short_output,
                         parallel=guardrails.recommended_concurrency[:3],
@@ -556,7 +659,7 @@ def _build_base_runs(settings: Settings, request: AgentStrategyRequest, guardrai
                 spec=_build_spec(
                     settings,
                     request,
-                    dataset="longalpaca" if dataset != "random" else dataset,
+                    dataset=long_dataset,
                     prompt_length=long_prompt,
                     output_length=max(2048, min(token_mid, 4096)),
                     parallel=long_points,
@@ -573,7 +676,7 @@ def _build_base_runs(settings: Settings, request: AgentStrategyRequest, guardrai
                     spec=_build_spec(
                         settings,
                         request,
-                        dataset="longalpaca" if dataset != "random" else dataset,
+                        dataset=long_dataset,
                         prompt_length=min(near_limit, int(request.context_window * 0.85)),
                         output_length=max(2048, min(token_mid, 4096)),
                         parallel=[1, 2],
@@ -590,7 +693,7 @@ def _build_base_runs(settings: Settings, request: AgentStrategyRequest, guardrai
                     spec=_build_spec(
                         settings,
                         request,
-                        dataset="longalpaca" if dataset != "random" else dataset,
+                        dataset=long_dataset,
                         prompt_length=long_prompt,
                         output_length=max(token_mid, 8192),
                         parallel=[1, 2],
@@ -641,7 +744,7 @@ def _build_base_runs(settings: Settings, request: AgentStrategyRequest, guardrai
                     spec=_build_spec(
                         settings,
                         request,
-                        dataset="longalpaca" if dataset != "random" else dataset,
+                        dataset=long_dataset,
                         prompt_length=max(8192, min(prompt_mid, 32768)),
                         output_length=max(2048, min(token_mid, 4096)),
                         parallel=reduced_parallel,

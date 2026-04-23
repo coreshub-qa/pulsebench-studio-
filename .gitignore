@@ -10,3 +10,4 @@ frontend/dist/
 frontend/.vite/
 *.tsbuildinfo
 data/runs/
+data/batches

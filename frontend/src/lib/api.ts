@@ -17,8 +17,28 @@ import type {
   ScenarioTemplate,
 } from "./types";
 
+function resolveApiBase(): string {
+  const explicitBase = import.meta.env.VITE_API_BASE_URL;
+  if (explicitBase) {
+    return explicitBase.replace(/\/$/, "");
+  }
+  if (typeof window === "undefined") {
+    return "";
+  }
+  if (window.location.port === "9001") {
+    return `${window.location.protocol}//${window.location.hostname}:9002`;
+  }
+  return "";
+}
+
+const API_BASE = resolveApiBase();
+
+function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, {
+  const response = await fetch(apiUrl(input), {
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
@@ -81,7 +101,7 @@ export const api = {
     onDelta?: (chunk: string) => void,
     aiConfig?: { aiBaseUrl?: string; aiApiKey?: string; aiModel?: string },
   ) {
-    const response = await fetch("/api/ai/analyze", {
+    const response = await fetch(apiUrl("/api/ai/analyze"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

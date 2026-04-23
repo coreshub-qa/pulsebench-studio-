@@ -1,35 +1,39 @@
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app/frontend
-COPY frontend/package.json ./
-COPY frontend/tsconfig.json ./
-COPY frontend/tsconfig.app.json ./
-COPY frontend/vite.config.ts ./
-COPY frontend/tailwind.config.js ./
-COPY frontend/postcss.config.js ./
-COPY frontend/index.html ./
-COPY frontend/src ./src
-RUN npm install && npm run build
-
-FROM python:3.10-slim
+FROM hub.kubesphere.com.cn/aicp-tests/evealscope-perf:0.17.1
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PULSEBENCH_DATA_DIR=/data \
     PULSEBENCH_RUNS_DIR=/data/runs \
-    PULSEBENCH_FRONTEND_DIST=/var/www/html
+    PULSEBENCH_BATCHES_DIR=/data/batches \
+    PULSEBENCH_FRONTEND_DIST=/app/frontend-dist \
+    PULSEBENCH_BACKEND_DIR=/app/backend \
+    PULSEBENCH_FRONTEND_PORT=9001 \
+    PULSEBENCH_BACKEND_PORT=9002
 
-COPY backend/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/requirements.txt /tmp/requirements.txt
+RUN python - <<'PY'
+from pathlib import Path
+
+requirements = []
+for raw_line in Path("/tmp/requirements.txt").read_text(encoding="utf-8").splitlines():
+    line = raw_line.strip()
+    if not line or line.startswith("#"):
+        continue
+    if line.startswith("evalscope"):
+        continue
+    requirements.append(line)
+Path("/tmp/runtime-requirements.txt").write_text("\n".join(requirements) + "\n", encoding="utf-8")
+PY
+RUN pip install --no-cache-dir -r /tmp/runtime-requirements.txt
 
 COPY backend ./backend
-COPY --from=frontend-builder /app/frontend/dist /var/www/html
+COPY docker ./docker
+COPY frontend/dist ./frontend-dist
 
-RUN mkdir -p /data/runs
+RUN mkdir -p /data/runs /data/batches
 
-WORKDIR /app/backend
-EXPOSE 8080
+EXPOSE 9001 9002
 VOLUME ["/data"]
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]
-
+CMD ["python", "/app/docker/serve.py"]

@@ -3,7 +3,8 @@ services:
     build: .
     image: pulsebench-studio
     ports:
-      - "8080:8080"
+      - "9001:9001"
+      - "9002:9002"
     environment:
       AI_BASE_URL: ${AI_BASE_URL:-}
       AI_API_KEY: ${AI_API_KEY:-}
@@ -13,4 +14,3 @@ services:
       - ./data:/data
       - /tmp/models:/models
       - /tmp/datasets:/datasets
-
