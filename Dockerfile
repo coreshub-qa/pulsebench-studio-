@@ -12,20 +12,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PULSEBENCH_BACKEND_PORT=9002
 
 COPY backend/requirements.txt /tmp/requirements.txt
-RUN python - <<'PY'
-from pathlib import Path
-
-requirements = []
-for raw_line in Path("/tmp/requirements.txt").read_text(encoding="utf-8").splitlines():
-    line = raw_line.strip()
-    if not line or line.startswith("#"):
-        continue
-    if line.startswith("evalscope"):
-        continue
-    requirements.append(line)
-Path("/tmp/runtime-requirements.txt").write_text("\n".join(requirements) + "\n", encoding="utf-8")
-PY
-RUN pip install --no-cache-dir -r /tmp/runtime-requirements.txt
+RUN sed '/^[[:space:]]*$/d; /^[[:space:]]*#/d; /^[[:space:]]*evalscope/d' /tmp/requirements.txt > /tmp/runtime-requirements.txt \
+    && pip install --no-cache-dir -r /tmp/runtime-requirements.txt
 
 COPY backend ./backend
 COPY docker ./docker
