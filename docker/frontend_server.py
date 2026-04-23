@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 
 BACKEND_HOST = os.getenv("PULSEBENCH_BACKEND_HOST", "127.0.0.1")
 BACKEND_PORT = int(os.getenv("PULSEBENCH_BACKEND_PORT", "9002"))
+BACKEND_PROXY_TIMEOUT = float(os.getenv("PULSEBENCH_BACKEND_PROXY_TIMEOUT", "180"))
 HOP_BY_HOP_HEADERS = {
     "connection",
     "keep-alive",
@@ -77,7 +78,7 @@ class SPARequestHandler(SimpleHTTPRequestHandler):
         }
         headers["Host"] = f"{BACKEND_HOST}:{BACKEND_PORT}"
 
-        connection = http.client.HTTPConnection(BACKEND_HOST, BACKEND_PORT, timeout=60)
+        connection = http.client.HTTPConnection(BACKEND_HOST, BACKEND_PORT, timeout=BACKEND_PROXY_TIMEOUT)
         try:
             connection.request(self.command, self.path, body=body, headers=headers)
             response = connection.getresponse()
