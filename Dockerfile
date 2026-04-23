@@ -20,6 +20,7 @@ COPY docker ./docker
 COPY frontend/dist ./frontend-dist
 
 RUN mkdir -p /data/runs /data/batches
+RUN cp /app/docker/start_up.sh /etc/start_up.sh && chmod +x /etc/start_up.sh
 
 EXPOSE 9001 9002
 VOLUME ["/data"]
