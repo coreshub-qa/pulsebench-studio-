@@ -83,10 +83,16 @@ class SPARequestHandler(SimpleHTTPRequestHandler):
             connection.request(self.command, self.path, body=body, headers=headers)
             response = connection.getresponse()
             self.send_response(response.status, response.reason)
+            is_event_stream = False
             for key, value in response.getheaders():
                 if key.lower() not in HOP_BY_HOP_HEADERS:
                     self.send_header(key, value)
+                if key.lower() == "content-type" and "text/event-stream" in value.lower():
+                    is_event_stream = True
             self.end_headers()
+            if is_event_stream:
+                self._relay_event_stream(response)
+                return
             while True:
                 chunk = response.read(64 * 1024)
                 if not chunk:
@@ -97,6 +103,14 @@ class SPARequestHandler(SimpleHTTPRequestHandler):
             self.send_error(502, f"Backend proxy failed: {exc}")
         finally:
             connection.close()
+
+    def _relay_event_stream(self, response: http.client.HTTPResponse) -> None:
+        while True:
+            line = response.readline()
+            if not line:
+                break
+            self.wfile.write(line)
+            self.wfile.flush()
 
 
 def main() -> None:

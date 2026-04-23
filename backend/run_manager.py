@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, AsyncIterator
@@ -34,6 +35,21 @@ def _json_default(value: object) -> str:
     if isinstance(value, datetime):
         return value.isoformat()
     raise TypeError(f"Unsupported value: {value!r}")
+
+
+SENSITIVE_LOG_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r'("Authorization"\s*:\s*"Bearer\s+)[^"]+(")'), r"\1******\2"),
+    (re.compile(r'("api_key"\s*:\s*")[^"]+(")'), r"\1******\2"),
+    (re.compile(r"(--api-key\s+)('[^']+'|\"[^\"]+\"|\S+)"), r"\1******"),
+    (re.compile(r"(Bearer\s+)(sk-[A-Za-z0-9._-]+)"), r"\1******"),
+)
+
+
+def _redact_log_line(line: str) -> str:
+    redacted = line
+    for pattern, replacement in SENSITIVE_LOG_PATTERNS:
+        redacted = pattern.sub(replacement, redacted)
+    return redacted
 
 
 class RunManager:
@@ -428,7 +444,7 @@ class RunManager:
                     break
                 text = line.decode("utf-8", errors="ignore").rstrip()
                 if text:
-                    self._append_event(run_id, RunEvent(type="log", ts=_utcnow(), message=text, phase="run"))
+                    self._append_event(run_id, RunEvent(type="log", ts=_utcnow(), message=_redact_log_line(text), phase="run"))
 
             exit_code = await process.wait()
             current_runtime = self._load_runtime(run_id)
